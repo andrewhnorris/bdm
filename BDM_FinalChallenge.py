@@ -12,10 +12,10 @@ def violations_per_streetline(output_folder):
 	# create a pyspark df from Parking Violations
 	violations = spark.read.csv('hdfs:///tmp/bdm/nyc_parking_violation/', header=True, inferSchema=True).cache()
 	# simplify dataframe, drop null vals
-	violations = violations.select(f.to_date(violations['Issue Date'], 'MM-dd-yyyy').alias('Date'), f.lower(violations['Violation County']).alias('County'), violations['House Number'], f.lower(violations['Street Name']).alias('Street Name')).na.drop()
+	violations = violations.select(violations['Issue Date'].alias('Date'), f.lower(violations['Violation County']).alias('County'), violations['House Number'], f.lower(violations['Street Name']).alias('Street Name')).na.drop()
 	violations.show()
 	# extract year
-	violations = violations.withColumn('Year', f.year(violations['Date']))
+	violations = violations.withColumn('Year', f.year(f.to_date(violations['Date'], 'MM-dd-yyyy')))
 	violations.show()
 	# filter years 2015-2019
 	# violations = violations.where(f.col("Year").isin({2015,2016,2017,2018,2019}))
