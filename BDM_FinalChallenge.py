@@ -11,7 +11,7 @@ import sys
 def violations_per_streetline(output_folder):
 	spark = SparkSession.builder.getOrCreate()
 	# create a pyspark df from Parking Violations
-	violations = spark.read.csv('hdfs:///tmp/bdm/nyc_parking_violations/', header=True, escape='"', inferSchema=True) # hdfs:///tmp/bdm/nyc_parking_violations/ -- FIX INPUT
+	violations = spark.read.csv('hdfs:///tmp/bdm/nyc_parking_violation/', header=True, inferSchema=True)
 	# simplify dataframe, drop null vals
 	violations = violations.select(violations['Issue Date'].alias('Date'), lower(violations['Violation County']).alias('County'), violations['House Number'], lower(violations['Street Name']).alias('Street Name')).na.drop()
 	# extract year
@@ -39,6 +39,8 @@ def violations_per_streetline(output_folder):
 	# drop unneeded cols
 	columns_to_drop = ['Date', 'County']
 	violations = violations.drop(*columns_to_drop)
+	# add even/odd col
+	violations = violations.withColumn('odd', f.when(f.col('House Number')%2==0, 0).otherwise(1))
 	
 	# create a pyspark df from Street Centerlines
 	centerlines = spark.read.csv('hdfs:///tmp/bdm/nyc_cscl.csv', header=True, escape='"', inferSchema=True)
@@ -58,11 +60,11 @@ def violations_per_streetline(output_folder):
 	violations_joined = violations.join(broadcast(centerlines),
 		(violations['BOROCODE'] == centerlines['BOROCODE']) & 
 		((violations['Street Name'] == centerlines['ST_LABEL']) | (violations['Street Name'] == centerlines['FULL_STREE'])) &
-		( ((violations['House Number']%2 == 0) & 
+		( ((violations['odd'] == 0) & 
 			(centerlines['R_LOW_HN'] <= violations['House Number']) & 
 			(violations['House Number'] <= centerlines['R_HIGH_HN']))
 			|
-		((violations['House Number']%2 == 1) & 
+		((violations['odd'] == 1) & 
 			(centerlines['L_LOW_HN'] <= violations['House Number']) & 
 			(violations['House Number'] <= centerlines['L_HIGH_HN']))
 		) )
