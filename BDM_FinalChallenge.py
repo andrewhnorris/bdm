@@ -1,9 +1,9 @@
 from pyspark import SparkContext
 from pyspark.sql.session import SparkSession
+import pyspark.sql.functions
 from pyspark.sql.functions import *
 from pyspark.sql.types import IntegerType
 from itertools import chain
-import pyspark.sql.functions as f
 from pyspark.sql.functions import broadcast
 import statsmodels.api as sm
 import sys
@@ -15,7 +15,7 @@ def violations_per_streetline(output_folder):
 	# simplify dataframe, drop null vals
 	violations = violations.select(violations['Issue Date'].alias('Date'), lower(violations['Violation County']).alias('County'), violations['House Number'], lower(violations['Street Name']).alias('Street Name')).na.drop()
 	# extract year
-	violations = violations.withColumn('Year', f.year(violations['Date']))
+	violations = violations.withColumn('Year', year(violations['Date']))
 	# filter years 2015-2019
 	violations = violations.where(f.col("Year").isin({2015,2016,2017,2018,2019}))
 	# clean house numbers
