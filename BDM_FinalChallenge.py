@@ -11,7 +11,7 @@ import sys
 def violations_per_streetline(output_folder):
 	spark = SparkSession.builder.getOrCreate()
 	# create a pyspark df from Parking Violations
-	violations = spark.read.csv('hdfs:///tmp/bdm/nyc_parking_violations/', header=True, escape='"', inferSchema=True) # hdfs:///tmp/bdm/nyc_parking_violations/ -- FIX INPUT
+	violations = spark.read.csv('hdfs:///tmp/bdm/nyc_parking_violation/', header=True, inferSchema=True) 
 	# simplify dataframe, drop null vals
 	violations = violations.select(violations['Issue Date'].alias('Date'), lower(violations['Violation County']).alias('County'), violations['House Number'], lower(violations['Street Name']).alias('Street Name')).na.drop()
 	# extract year
