@@ -1,6 +1,5 @@
 from pyspark import SparkContext
 from pyspark.sql.session import SparkSession
-# from pyspark.sql.functions import *
 import pyspark.sql.functions as f 
 from pyspark.sql.types import IntegerType
 from itertools import chain
@@ -11,13 +10,13 @@ import sys
 def violations_per_streetline(output_folder):
 	spark = SparkSession.builder.getOrCreate()
 	# create a pyspark df from Parking Violations
-	violations = spark.read.csv('hdfs:///tmp/bdm/nyc_parking_violation/', header=True, inferSchema=True) 
+	violations = spark.read.csv('hdfs:///tmp/bdm/nyc_parking_violation/', header=True, inferSchema=True).cache()
 	# simplify dataframe, drop null vals
 	violations = violations.select(f.to_date(violations['Issue Date'], 'MM-dd-yyyy').alias('Date'), f.lower(violations['Violation County']).alias('County'), violations['House Number'], f.lower(violations['Street Name']).alias('Street Name')).na.drop()
 	# extract year
 	violations = violations.withColumn('Year', f.year(violations['Date']))
 	# filter years 2015-2019
-	violations = violations.where(f.col("Year").isin({2015,2016,2017,2018,2019}))
+	# violations = violations.where(f.col("Year").isin({2015,2016,2017,2018,2019}))
 	# clean house numbers
 	violations = violations.withColumn('House Number', f.regexp_replace('House Number', '-', '').cast(IntegerType()))
 	# map county vals to borocode
@@ -43,7 +42,7 @@ def violations_per_streetline(output_folder):
 	violations = violations.withColumn('odd', f.when(f.col('House Number')%2==0, 0).otherwise(1))
 	
 	# create a pyspark df from Street Centerlines
-	centerlines = spark.read.csv('hdfs:///tmp/bdm/nyc_cscl.csv', header=True, escape='"', inferSchema=True)
+	centerlines = spark.read.csv('hdfs:///tmp/bdm/nyc_cscl.csv', header=True, escape='"', inferSchema=True).cache()
 	# select cols
 	centerlines = centerlines.select(centerlines['PHYSICALID'], \
 		centerlines['L_LOW_HN'], centerlines['L_HIGH_HN'], centerlines['R_LOW_HN'],\
@@ -69,7 +68,7 @@ def violations_per_streetline(output_folder):
 			(violations['House Number'] <= centerlines['L_HIGH_HN']))
 		) )
 	# group on PHYSICALID, pivot on Year
-	violations_joined = violations_joined.groupBy("PHYSICALID").pivot("YEAR").count()
+	violations_joined = violations_joined.groupBy("PHYSICALID").pivot("YEAR", ['2015','2016','2017','2018','2019']).count()
 	# fill na's with 0
 	violations_joined = violations_joined.na.fill(0)
 	# rename pivoted columns for output
