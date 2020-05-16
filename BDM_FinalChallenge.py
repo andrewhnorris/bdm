@@ -33,7 +33,7 @@ def violations_per_streetline(output_folder):
 		for name in co:
 			county_dic[name] = i+1
 
-	mapping_expr = create_map([lit(x) for x in chain(*county_dic.items())])
+	mapping_expr = f.create_map([f.lit(x) for x in chain(*county_dic.items())])
 		
 	violations = violations.withColumn("BOROCODE", mapping_expr.getItem(col("County")))
 	# drop unneeded cols
@@ -57,7 +57,7 @@ def violations_per_streetline(output_folder):
 	centerlines = centerlines.withColumn('R_HIGH_HN', f.regexp_replace('R_HIGH_HN', '-', '').cast(IntegerType()))
 
 	# join Violations and Centerline data frames on conditions
-	violations_joined = violations.join(broadcast(centerlines),
+	violations_joined = violations.join(f.broadcast(centerlines),
 		(violations['BOROCODE'] == centerlines['BOROCODE']) & 
 		((violations['Street Name'] == centerlines['ST_LABEL']) | (violations['Street Name'] == centerlines['FULL_STREE'])) &
 		( ((violations['odd'] == 0) & 
