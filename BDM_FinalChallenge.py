@@ -73,11 +73,11 @@ def violations_per_streetline(output_folder):
 	# fill na's with 0
 	violations_joined = violations_joined.na.fill(0)
 	# rename pivoted columns for output
-	violations_joined = violations_joined.withColumnRenamed("2015", "COUNT_2015")\
-		.withColumnRenamed("2016", "COUNT_2016")\
-		.withColumnRenamed("2017", "COUNT_2017")\
-		.withColumnRenamed("2018", "COUNT_2018")\
-		.withColumnRenamed("2019", "COUNT_2019")
+	violations_joined = violations_joined.withColumnRenamed('2015', 'COUNT_2015')\
+		.withColumnRenamed('2016', 'COUNT_2016')\
+		.withColumnRenamed('2017', 'COUNT_2017')\
+		.withColumnRenamed('2018', 'COUNT_2018')\
+		.withColumnRenamed('2019', 'COUNT_2019')
 	# join remaining centerlines (without violations)
 	full_violations_joined = violations_joined.join(broadcast(centerlines), ['PHYSICALID'], how='right')
 	# drop unneeded cols
