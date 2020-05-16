@@ -19,7 +19,7 @@ def violations_per_streetline(output_folder):
 	# filter years 2015-2019
 	violations = violations.where(f.col("Year").isin({2015,2016,2017,2018,2019}))
 	# clean house numbers
-	violations = violations.withColumn('House Number', regexp_replace('House Number', '-', '').cast(IntegerType()))
+	violations = violations.withColumn('House Number', f.regexp_replace('House Number', '-', '').cast(IntegerType()))
 	# map county vals to borocode
 	mn = ['man','mh','mn','newy','new','y','ny']
 	bk = ['bk','k','king','kings']
@@ -51,10 +51,10 @@ def violations_per_streetline(output_folder):
 		f.lower(centerlines['FULL_STREE']).alias('FULL_STREE'),\
 		centerlines['BOROCODE'])
 	# clean house numbers, cast as integers
-	centerlines = centerlines.withColumn('L_LOW_HN', regexp_replace('L_LOW_HN', '-', '').cast(IntegerType()))
-	centerlines = centerlines.withColumn('L_HIGH_HN', regexp_replace('L_HIGH_HN', '-', '').cast(IntegerType()))
-	centerlines = centerlines.withColumn('R_LOW_HN', regexp_replace('R_LOW_HN', '-', '').cast(IntegerType()))
-	centerlines = centerlines.withColumn('R_HIGH_HN', regexp_replace('R_HIGH_HN', '-', '').cast(IntegerType()))
+	centerlines = centerlines.withColumn('L_LOW_HN', f.regexp_replace('L_LOW_HN', '-', '').cast(IntegerType()))
+	centerlines = centerlines.withColumn('L_HIGH_HN', f.regexp_replace('L_HIGH_HN', '-', '').cast(IntegerType()))
+	centerlines = centerlines.withColumn('R_LOW_HN', f.regexp_replace('R_LOW_HN', '-', '').cast(IntegerType()))
+	centerlines = centerlines.withColumn('R_HIGH_HN', f.regexp_replace('R_HIGH_HN', '-', '').cast(IntegerType()))
 
 	# join Violations and Centerline data frames on conditions
 	violations_joined = violations.join(broadcast(centerlines),
