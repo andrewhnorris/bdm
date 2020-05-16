@@ -73,15 +73,16 @@ def violations_per_streetline(output_folder):
 	# fill na's with 0
 	violations_joined = violations_joined.na.fill(0)
 	# rename pivoted columns for output
-	violations_joined = violations_joined.withColumnRenamed('2015', 'COUNT_2015')\
-		.withColumnRenamed('2016', 'COUNT_2016')\
-		.withColumnRenamed('2017', 'COUNT_2017')\
-		.withColumnRenamed('2018', 'COUNT_2018')\
-		.withColumnRenamed('2019', 'COUNT_2019')
+	# violations_joined = violations_joined.withColumnRenamed('2015', 'COUNT_2015')\
+	# 	.withColumnRenamed('2016', 'COUNT_2016')\
+	# 	.withColumnRenamed('2017', 'COUNT_2017')\
+	# 	.withColumnRenamed('2018', 'COUNT_2018')\
+	# 	.withColumnRenamed('2019', 'COUNT_2019')
 	# join remaining centerlines (without violations)
 	full_violations_joined = violations_joined.join(broadcast(centerlines), ['PHYSICALID'], how='right')
 	# drop unneeded cols
-	columns_to_keep = ['PHYSICALID', 'COUNT_2015','COUNT_2016','COUNT_2017','COUNT_2018','COUNT_2019']
+	# columns_to_keep = ['PHYSICALID', 'COUNT_2015','COUNT_2016','COUNT_2017','COUNT_2018','COUNT_2019']
+	columns_to_keep = ['PHYSICALID', '2015','2016','2017','2018','2019']
 	full_violations_joined = full_violations_joined.select(*columns_to_keep)
 	# fill na's with 0
 	full_violations_joined = full_violations_joined.na.fill(0)
@@ -94,7 +95,7 @@ def violations_per_streetline(output_folder):
 		results = model.fit()
 		return results.params[1]
 	# add col with OLS coeff for each street segment
-	full_violations_joined = full_violations_joined.withColumn('OLS_COEF', ols_coef(full_violations_joined['COUNT_2015'], full_violations_joined['COUNT_2016'], full_violations_joined['COUNT_2017'], full_violations_joined['COUNT_2018'], full_violations_joined['COUNT_2019']))
+	full_violations_joined = full_violations_joined.withColumn('OLS_COEF', ols_coef(full_violations_joined['2015'], full_violations_joined['2016'], full_violations_joined['2017'], full_violations_joined['2018'], full_violations_joined['2019']))
 	# order by PHYSICALID
 	full_violations_joined = full_violations_joined.orderBy('PHYSICALID')
 	# write to csv
