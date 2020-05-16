@@ -93,7 +93,7 @@ def violations_per_streetline(output_folder):
 		results = model.fit()
 		return results.params[1]
 	# add col with OLS coeff for each street segment
-	full_violations_joined = full_violations_joined.withColumn('OLS_COEF', ols_coef(full_violations_joined['2015'], full_violations_joined['2016'], full_violations_joined['2017'], full_violations_joined['2018'], full_violations_joined['2019']))
+	full_violations_joined = full_violations_joined.withColumn('OLS_COEF', ols_coef(full_violations_joined['COUNT_2015'], full_violations_joined['COUNT_2016'], full_violations_joined['COUNT_2017'], full_violations_joined['COUNT_2018'], full_violations_joined['COUNT_2019']))
 	# order by PHYSICALID
 	full_violations_joined = full_violations_joined.orderBy('PHYSICALID')
 	# write to csv
