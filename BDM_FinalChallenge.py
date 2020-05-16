@@ -11,14 +11,18 @@ def violations_per_streetline(output_folder):
 	spark = SparkSession.builder.getOrCreate()
 	# create a pyspark df from Parking Violations
 	violations = spark.read.csv('hdfs:///tmp/bdm/nyc_parking_violation/', header=True, inferSchema=True).cache()
+	violations.show()
 	# simplify dataframe, drop null vals
 	violations = violations.select(f.to_date(violations['Issue Date'], 'MM-dd-yyyy').alias('Date'), f.lower(violations['Violation County']).alias('County'), violations['House Number'], f.lower(violations['Street Name']).alias('Street Name')).na.drop()
+	violations.show()
 	# extract year
 	violations = violations.withColumn('Year', f.year(violations['Date']))
+	violations.show()
 	# filter years 2015-2019
 	# violations = violations.where(f.col("Year").isin({2015,2016,2017,2018,2019}))
 	# clean house numbers
 	violations = violations.withColumn('House Number', f.regexp_replace('House Number', '-', '').cast(IntegerType()))
+	violations.show()
 	# map county vals to borocode
 	mn = ['man','mh','mn','newy','new','y','ny']
 	bk = ['bk','k','king','kings']
