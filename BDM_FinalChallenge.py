@@ -1,6 +1,6 @@
 from pyspark import SparkContext
 from pyspark.sql.session import SparkSession
-import pyspark.sql.functions
+import pyspark.sql.functions as f 
 from pyspark.sql.functions import *
 from pyspark.sql.types import IntegerType
 from itertools import chain
@@ -13,11 +13,11 @@ def violations_per_streetline(output_folder):
 	# create a pyspark df from Parking Violations
 	violations = spark.read.csv('hdfs:///tmp/bdm/nyc_parking_violation/', header=True, inferSchema=True) 
 	# simplify dataframe, drop null vals
-	violations = violations.select(violations['Issue Date'].alias('Date'), lower(violations['Violation County']).alias('County'), violations['House Number'], lower(violations['Street Name']).alias('Street Name')).na.drop()
+	violations = violations.select(violations['Issue Date'].alias('Date'), f.lower(violations['Violation County']).alias('County'), violations['House Number'], f.lower(violations['Street Name']).alias('Street Name')).na.drop()
 	# extract year
-	violations = violations.withColumn('Year', year(violations['Date']))
+	violations = violations.withColumn('Year', f.year(violations['Date']))
 	# filter years 2015-2019
-	violations = violations.where(col("Year").isin({2015,2016,2017,2018,2019}))
+	violations = violations.where(f.col("Year").isin({2015,2016,2017,2018,2019}))
 	# clean house numbers
 	violations = violations.withColumn('House Number', regexp_replace('House Number', '-', '').cast(IntegerType()))
 	# map county vals to borocode
@@ -47,8 +47,8 @@ def violations_per_streetline(output_folder):
 	# select cols
 	centerlines = centerlines.select(centerlines['PHYSICALID'], \
 		centerlines['L_LOW_HN'], centerlines['L_HIGH_HN'], centerlines['R_LOW_HN'],\
-		centerlines['R_HIGH_HN'], lower(centerlines['ST_LABEL']).alias('ST_LABEL'),\
-		lower(centerlines['FULL_STREE']).alias('FULL_STREE'),\
+		centerlines['R_HIGH_HN'], f.lower(centerlines['ST_LABEL']).alias('ST_LABEL'),\
+		f.lower(centerlines['FULL_STREE']).alias('FULL_STREE'),\
 		centerlines['BOROCODE'])
 	# clean house numbers, cast as integers
 	centerlines = centerlines.withColumn('L_LOW_HN', regexp_replace('L_LOW_HN', '-', '').cast(IntegerType()))
