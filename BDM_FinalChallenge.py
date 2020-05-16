@@ -35,7 +35,7 @@ def violations_per_streetline(output_folder):
 
 	mapping_expr = f.create_map([f.lit(x) for x in chain(*county_dic.items())])
 		
-	violations = violations.withColumn("BOROCODE", mapping_expr.getItem(col("County")))
+	violations = violations.withColumn("BOROCODE", mapping_expr.getItem(f.col("County")))
 	# drop unneeded cols
 	columns_to_drop = ['Date', 'County']
 	violations = violations.drop(*columns_to_drop)
