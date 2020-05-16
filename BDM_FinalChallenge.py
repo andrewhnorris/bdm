@@ -15,7 +15,7 @@ def violations_per_streetline(output_folder):
 	violations = violations.select(violations['Issue Date'].alias('Date'), f.lower(violations['Violation County']).alias('County'), violations['House Number'], f.lower(violations['Street Name']).alias('Street Name')).na.drop()
 	violations.show()
 	# extract year
-	violations = violations.withColumn('Year', f.year(f.to_date(violations['Date'], 'MM-dd-yyyy')))
+	violations = violations.withColumn('Year', violations['Date'].substr(-4,4))
 	violations.show()
 	# filter years 2015-2019
 	# violations = violations.where(f.col("Year").isin({2015,2016,2017,2018,2019}))
