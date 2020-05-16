@@ -79,7 +79,7 @@ def violations_per_streetline(output_folder):
 		.withColumnRenamed("2018", "COUNT_2018")\
 		.withColumnRenamed("2019", "COUNT_2019")
 	# join remaining centerlines (without violations)
-	full_violations_joined = violations_joined.join(centerlines, ['PHYSICALID'], how='right')
+	full_violations_joined = violations_joined.join(broadcast(centerlines), ['PHYSICALID'], how='right')
 	# drop unneeded cols
 	columns_to_keep = ['PHYSICALID', 'COUNT_2015','COUNT_2016','COUNT_2017','COUNT_2018','COUNT_2019']
 	full_violations_joined = full_violations_joined.select(*columns_to_keep)
