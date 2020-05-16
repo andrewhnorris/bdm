@@ -55,6 +55,10 @@ def violations_per_streetline(output_folder):
 	centerlines = centerlines.withColumn('R_LOW_HN', f.regexp_replace('R_LOW_HN', '-', '').cast(IntegerType()))
 	centerlines = centerlines.withColumn('R_HIGH_HN', f.regexp_replace('R_HIGH_HN', '-', '').cast(IntegerType()))
 
+	# uncache data
+	violations = violations.unpersist()
+	centerlines = centerlines.unpersist()
+
 	# join Violations and Centerline data frames on conditions
 	violations_joined = violations.join(f.broadcast(centerlines),
 		(violations['BOROCODE'] == centerlines['BOROCODE']) & 
