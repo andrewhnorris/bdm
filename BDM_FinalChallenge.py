@@ -14,8 +14,7 @@ def violations_per_streetline(output_folder):
 	# simplify dataframe, drop null vals
 	violations = violations.select(f.to_date(violations['Issue Date'], 'MM-dd-yyyy').alias('Date'), f.lower(violations['Violation County']).alias('County'), violations['House Number'], f.lower(violations['Street Name']).alias('Street Name')).na.drop()
 	# extract year
-	#violations = violations.withColumn('Year', f.year(violations['Date']))
-	violations = violations.withColumn('Year', violations['Date'].substr(-4,4))
+	violations = violations.withColumn('Year', f.year(violations['Date']))
 	# filter years 2015-2019
 	# violations = violations.where(f.col("Year").isin({2015,2016,2017,2018,2019}))
 	# clean house numbers
