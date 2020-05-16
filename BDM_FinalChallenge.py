@@ -17,7 +17,7 @@ def violations_per_streetline(output_folder):
 	# extract year
 	violations = violations.withColumn('Year', year(violations['Date']))
 	# filter years 2015-2019
-	violations = violations.where(f.col("Year").isin({2015,2016,2017,2018,2019}))
+	violations = violations.where(col("Year").isin({2015,2016,2017,2018,2019}))
 	# clean house numbers
 	violations = violations.withColumn('House Number', regexp_replace('House Number', '-', '').cast(IntegerType()))
 	# map county vals to borocode
