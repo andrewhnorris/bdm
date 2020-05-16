@@ -1,7 +1,7 @@
 from pyspark import SparkContext
 from pyspark.sql.session import SparkSession
+# from pyspark.sql.functions import *
 import pyspark.sql.functions as f 
-from pyspark.sql.functions import *
 from pyspark.sql.types import IntegerType
 from itertools import chain
 from pyspark.sql.functions import broadcast
@@ -13,7 +13,7 @@ def violations_per_streetline(output_folder):
 	# create a pyspark df from Parking Violations
 	violations = spark.read.csv('hdfs:///tmp/bdm/nyc_parking_violation/', header=True, inferSchema=True) 
 	# simplify dataframe, drop null vals
-	violations = violations.select(violations['Issue Date'].alias('Date'), f.lower(violations['Violation County']).alias('County'), violations['House Number'], f.lower(violations['Street Name']).alias('Street Name')).na.drop()
+	violations = violations.select(f.to_date(violations['Issue Date'], 'MM-dd-yyyy').alias('Date'), f.lower(violations['Violation County']).alias('County'), violations['House Number'], f.lower(violations['Street Name']).alias('Street Name')).na.drop()
 	# extract year
 	violations = violations.withColumn('Year', f.year(violations['Date']))
 	# filter years 2015-2019
