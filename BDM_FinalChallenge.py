@@ -67,6 +67,7 @@ def violations_per_streetline(output_folder):
 			(centerlines['L_LOW_HN'] <= violations['House Number']) & 
 			(violations['House Number'] <= centerlines['L_HIGH_HN']))
 		) )
+	violations_joined.show()
 	# group on PHYSICALID, pivot on Year
 	violations_joined = violations_joined.groupBy("PHYSICALID").pivot("YEAR", ['2015','2016','2017','2018','2019']).count()
 	# fill na's with 0
@@ -98,7 +99,7 @@ def violations_per_streetline(output_folder):
 	full_violations_joined = full_violations_joined.orderBy('PHYSICALID')
 
 	# remove dups:
-	full_violations_joined = full_violations_joined.distinct()
+	# full_violations_joined = full_violations_joined.distinct()
 	# write to csv
 	full_violations_joined.write.csv(output_folder)
 
