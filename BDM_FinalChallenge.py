@@ -13,15 +13,12 @@ def violations_per_streetline(output_folder):
 	violations = spark.read.csv('hdfs:///tmp/bdm/nyc_parking_violation/', header=True, inferSchema=True).cache()
 	# simplify dataframe, drop null vals
 	violations = violations.select(violations['Issue Date'].alias('Date'), f.lower(violations['Violation County']).alias('County'), violations['House Number'], f.lower(violations['Street Name']).alias('Street Name')).na.drop()
-	violations.show()
 	# extract year
 	violations = violations.withColumn('Year', violations['Date'].substr(-4,4))
-	violations.show()
 	# filter years 2015-2019
 	# violations = violations.where(f.col("Year").isin({2015,2016,2017,2018,2019}))
 	# clean house numbers
 	violations = violations.withColumn('House Number', f.regexp_replace('House Number', '-', '').cast(IntegerType()))
-	violations.show()
 	# map county vals to borocode
 	mn = ['man','mh','mn','newy','new','y','ny']
 	bk = ['bk','k','king','kings']
@@ -38,7 +35,6 @@ def violations_per_streetline(output_folder):
 	mapping_expr = f.create_map([f.lit(x) for x in chain(*county_dic.items())])
 		
 	violations = violations.withColumn("BOROCODE", mapping_expr.getItem(f.col("County")))
-	violations.show()
 	# drop unneeded cols
 	columns_to_drop = ['Date', 'County']
 	violations = violations.drop(*columns_to_drop)
@@ -71,11 +67,11 @@ def violations_per_streetline(output_folder):
 			(centerlines['L_LOW_HN'] <= violations['House Number']) & 
 			(violations['House Number'] <= centerlines['L_HIGH_HN']))
 		) )
-	violations_joined.show()
 	# group on PHYSICALID, pivot on Year
 	violations_joined = violations_joined.groupBy("PHYSICALID").pivot("YEAR", ['2015','2016','2017','2018','2019']).count()
 	# fill na's with 0
 	violations_joined = violations_joined.na.fill(0)
+	violations_joined.show()
 	# rename pivoted columns for output
 	violations_joined = violations_joined.withColumnRenamed('2015', 'COUNT_2015')\
 		.withColumnRenamed('2016', 'COUNT_2016')\
@@ -89,6 +85,7 @@ def violations_per_streetline(output_folder):
 	full_violations_joined = full_violations_joined.select(*columns_to_keep)
 	# fill na's with 0
 	full_violations_joined = full_violations_joined.na.fill(0)
+	full_violations_joined.show()
 	# function to calculate OLS R-squared
 	def ols_coef(a,b,c,d,e):
 		x = ([2015,2016,2017,2018,2019])
