@@ -15,7 +15,7 @@ def violations_per_streetline(output_folder):
 	# simplify dataframe, drop null vals
 	violations = violations.select(f.to_date(violations['Issue Date'], 'MM-dd-yyyy').alias('Date'), f.lower(violations['Violation County']).alias('County'), violations['House Number'], f.lower(violations['Street Name']).alias('Street Name')).na.drop()
 	# extract year
-	violations = violations.withColumn('Year', violations['Date'].substr(-4,4))
+	violations = violations.withColumn('Year', f.year(violations['Date']))
 	# filter years 2015-2019
 	violations = violations.where(f.col("Year").isin({2015,2016,2017,2018,2019}))
 	# clean house numbers
@@ -73,16 +73,15 @@ def violations_per_streetline(output_folder):
 	# fill na's with 0
 	violations_joined = violations_joined.na.fill(0)
 	# rename pivoted columns for output
-	# violations_joined = violations_joined.withColumnRenamed('2015', 'COUNT_2015')\
-	# 	.withColumnRenamed('2016', 'COUNT_2016')\
-	# 	.withColumnRenamed('2017', 'COUNT_2017')\
-	# 	.withColumnRenamed('2018', 'COUNT_2018')\
-	# 	.withColumnRenamed('2019', 'COUNT_2019')
+	violations_joined = violations_joined.withColumnRenamed('2015', 'COUNT_2015')\
+		.withColumnRenamed('2016', 'COUNT_2016')\
+		.withColumnRenamed('2017', 'COUNT_2017')\
+		.withColumnRenamed('2018', 'COUNT_2018')\
+		.withColumnRenamed('2019', 'COUNT_2019')
 	# join remaining centerlines (without violations)
 	full_violations_joined = violations_joined.join(broadcast(centerlines), ['PHYSICALID'], how='right')
 	# drop unneeded cols
-	# columns_to_keep = ['PHYSICALID', 'COUNT_2015','COUNT_2016','COUNT_2017','COUNT_2018','COUNT_2019']
-	columns_to_keep = ['PHYSICALID', '`2015','`2016','`2017','`2018','`2019']
+	columns_to_keep = ['PHYSICALID','COUNT_2015','COUNT_2016','COUNT_2017','COUNT_2018','COUNT_2019']
 	full_violations_joined = full_violations_joined.select(*columns_to_keep)
 	# fill na's with 0
 	full_violations_joined = full_violations_joined.na.fill(0)
