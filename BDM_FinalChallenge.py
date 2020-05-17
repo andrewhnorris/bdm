@@ -6,7 +6,7 @@ from itertools import chain
 from pyspark.sql.functions import broadcast
 import statsmodels.api as sm
 import sys
-import datetime as datetime 
+import datetime
 
 def violations_per_streetline(output_folder):
 	spark = SparkSession.builder.getOrCreate()
