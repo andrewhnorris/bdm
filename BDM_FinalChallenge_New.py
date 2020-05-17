@@ -38,12 +38,12 @@ def violations_per_streetline(output_folder):
 	# drop unneeded cols
 	columns_to_drop = ['Date', 'County']
 	violations = violations.drop(*columns_to_drop)
-    # Find Total Complaints by Product and Year
+    	# Find Total Complaints by Product and Year
     
-    violations = violations.groupBy('BOROCODE','Street Name','House Number').pivot('Year', ['2015','2016','2017','2018','2019']).count()
+    	violations = violations.groupBy('BOROCODE','Street Name','House Number').pivot('Year', ['2015','2016','2017','2018','2019']).count()
 
-    # fill na's with 0
-    violations = violations.na.fill(0)
+    	# fill na's with 0
+    	violations = violations.na.fill(0)
 	# add even/odd col
 	violations = violations.withColumn('odd', f.when(f.col('House Number')%2==0, 0).otherwise(1))
 	
@@ -90,8 +90,8 @@ def violations_per_streetline(output_folder):
 	# drop unneeded cols
 	columns_to_keep = ['PHYSICALID','2015','2016','2017','2018','2019']
 	full_violations_joined = full_violations_joined.select(*columns_to_keep)
-    # group, sum on physical ID
-    full_violations_joined = full_violations_joined.groupBy('PHYSICALID').agg({'COUNT_2015':'sum',\
+    	# group, sum on physical ID
+    	full_violations_joined = full_violations_joined.groupBy('PHYSICALID').agg({'COUNT_2015':'sum',\
                                                                           'COUNT_2016':'sum',\
                                                                           'COUNT_2017':'sum',\
                                                                           'COUNT_2018':'sum',\
