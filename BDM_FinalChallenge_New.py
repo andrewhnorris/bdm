@@ -88,7 +88,7 @@ def violations_per_streetline(output_folder):
 	columns_to_keep = ['PHYSICALID','2015','2016','2017','2018','2019']
 	full_violations_joined = full_violations_joined.select(*columns_to_keep)
     # group, sum on physical ID
-	full_violations_joined = full_violations_joined.groupBy('PHYSICALID').agg({'COUNT_2015':'sum','COUNT_2016':'sum','COUNT_2017':'sum','COUNT_2018':'sum','COUNT_2019':'sum'})
+	full_violations_joined = full_violations_joined.groupBy('PHYSICALID').agg({'2015':'sum','2016':'sum','2017':'sum','2018':'sum','2019':'sum'})
 	# fill na's with 0
 	full_violations_joined = full_violations_joined.na.fill(0)
 	full_violations_joined.show()
