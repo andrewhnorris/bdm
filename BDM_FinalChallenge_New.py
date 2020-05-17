@@ -68,7 +68,7 @@ def violations_per_streetline(output_folder):
                                  centerlines['R_HIGH_HN'], centerlines['BOROCODE'], f.lower(centerlines['FULL_STREE']).alias('FULL_STREE'))
 
     # union centerlines, so all labels are in one col 
-	centerlines = centerlines_street.union(centerlines_full)
+	centerlines = centerlines_street.union(centerlines_full).distinct()
 
 	# uncache data
 	violations = violations.unpersist()
