@@ -6,7 +6,7 @@ from itertools import chain
 from pyspark.sql.functions import broadcast
 import statsmodels.api as sm
 import sys
-import datetime
+import datetime as dt
 
 def violations_per_streetline(output_folder):
 	spark = SparkSession.builder.getOrCreate()
@@ -115,9 +115,9 @@ def violations_per_streetline(output_folder):
 
 if __name__ == '__main__':
 	output_folder = sys.argv[1]
-	starttime = datetime.now()
+	starttime = dt.now()
 	run_spark(str(p.output_path))
-	elapsed = datetime.now() - starttime
+	elapsed = dt.now() - starttime
 	print("Done, Elapsed: {} (secs)".format(elapsed.total_seconds()))
 	violations_per_streetline(output_folder) 
 
