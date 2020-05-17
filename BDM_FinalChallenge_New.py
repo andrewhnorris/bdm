@@ -39,7 +39,9 @@ def violations_per_streetline(output_folder):
 	columns_to_drop = ['Date', 'County']
 	violations = violations.drop(*columns_to_drop)
     # Find Total Complaints by Product and Year
+    
     violations = violations.groupBy('BOROCODE','Street Name','House Number').pivot('Year', ['2015','2016','2017','2018','2019']).count()
+
     # fill na's with 0
     violations = violations.na.fill(0)
 	# add even/odd col
