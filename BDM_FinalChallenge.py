@@ -116,7 +116,6 @@ def violations_per_streetline(output_folder):
 if __name__ == '__main__':
 	output_folder = sys.argv[1]
 	starttime = dt.datetime.now()
-	run_spark(str(p.output_path))
 	elapsed = dt.datetime.now() - starttime
 	print("Done, Elapsed: {} (secs)".format(elapsed.total_seconds()))
 	violations_per_streetline(output_folder) 
