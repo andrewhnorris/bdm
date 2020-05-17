@@ -19,6 +19,7 @@ def violations_per_streetline(output_folder):
 	# violations = violations.where(f.col("Year").isin({2015,2016,2017,2018,2019}))
 	# clean house numbers
 	violations = violations.withColumn('House Number', f.regexp_replace('House Number', '-', '').cast(IntegerType()))
+	violations = violations.withColumn('House Number', f.regexp_replace(f.col('House Number'), '[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]', ''))
 	# map county vals to borocode
 	mn = ['man','mh','mn','newy','new','y','ny']
 	bk = ['bk','k','king','kings']
@@ -38,9 +39,12 @@ def violations_per_streetline(output_folder):
 	# drop unneeded cols
 	columns_to_drop = ['Date', 'County']
 	violations = violations.drop(*columns_to_drop)
+    # Find Total Complaints by Product and Year
+	violations = violations.groupBy('BOROCODE','Street Name','House Number').pivot('Year', ['2015','2016','2017','2018','2019']).count()
+    # fill na's with 0
+	violations = violations.na.fill(0)
 	# add even/odd col
 	violations = violations.withColumn('odd', f.when(f.col('House Number')%2==0, 0).otherwise(1))
-	
 	# create a pyspark df from Street Centerlines
 	centerlines = spark.read.csv('hdfs:///tmp/bdm/nyc_cscl.csv', header=True, escape='"', inferSchema=True).cache()
 	# select cols
@@ -54,7 +58,19 @@ def violations_per_streetline(output_folder):
 	centerlines = centerlines.withColumn('L_HIGH_HN', f.regexp_replace('L_HIGH_HN', '-', '').cast(IntegerType()))
 	centerlines = centerlines.withColumn('R_LOW_HN', f.regexp_replace('R_LOW_HN', '-', '').cast(IntegerType()))
 	centerlines = centerlines.withColumn('R_HIGH_HN', f.regexp_replace('R_HIGH_HN', '-', '').cast(IntegerType()))
+    # Select cols:  PHYSICALID, L_LOW_HN, L_HIGH_HN, R_LOW_HN, R_HIGH_HN, ST_LABEL, FULL_STREE, BOROCODE
+	centerlines_street = centerlines.select(centerlines['PHYSICALID'], \
+                                 centerlines['L_LOW_HN'], centerlines['L_HIGH_HN'], centerlines['R_LOW_HN'],\
+                                 centerlines['R_HIGH_HN'], centerlines['BOROCODE'], f.lower(centerlines['ST_LABEL']).alias('ST_LABEL'))
 
+    # Select cols:  PHYSICALID, L_LOW_HN, L_HIGH_HN, R_LOW_HN, R_HIGH_HN, ST_LABEL, FULL_STREE, BOROCODE
+	centerlines_full = centerlines.select(centerlines['PHYSICALID'], \
+                                 centerlines['L_LOW_HN'], centerlines['L_HIGH_HN'], centerlines['R_LOW_HN'],\
+                                 centerlines['R_HIGH_HN'], centerlines['BOROCODE'], f.lower(centerlines['FULL_STREE']).alias('FULL_STREE'))
+
+    # union centerlines, so all labels are in one col 
+	centerlines = centerlines_street.union(centerlines_full)
+    
 	# uncache data
 	violations = violations.unpersist()
 	centerlines = centerlines.unpersist()
@@ -62,7 +78,7 @@ def violations_per_streetline(output_folder):
 	# join Violations and Centerline data frames on conditions
 	violations_joined = violations.join(f.broadcast(centerlines),
 		(violations['BOROCODE'] == centerlines['BOROCODE']) & 
-		((violations['Street Name'] == centerlines['ST_LABEL']) | (violations['Street Name'] == centerlines['FULL_STREE'])) &
+		(violations['Street Name'] == centerlines['ST_LABEL']) &
 		( ((violations['odd'] == 0) & 
 			(centerlines['R_LOW_HN'] <= violations['House Number']) & 
 			(violations['House Number'] <= centerlines['R_HIGH_HN']))
@@ -71,26 +87,16 @@ def violations_per_streetline(output_folder):
 			(centerlines['L_LOW_HN'] <= violations['House Number']) & 
 			(violations['House Number'] <= centerlines['L_HIGH_HN']))
 		) )
-	violations_joined.show()
-	# group on PHYSICALID, pivot on Year
-	violations_joined = violations_joined.groupBy("PHYSICALID").pivot("YEAR", ['2015','2016','2017','2018','2019']).count()
+
+	# drop unneeded cols
+	columns_to_keep = ['PHYSICALID','2015','2016','2017','2018','2019']
+	violations_joined = violations_joined.select(*columns_to_keep)
+    # drop duplicates caused by union
+	violations_joined = violations_joined.dropDuplicates(['PHYSICALID', '2015','2016','2017','2018','2019'])
+    # group, sum on physical ID
+	violations_joined = violations_joined.groupBy('PHYSICALID').agg({'2015':'sum','2016':'sum','2017':'sum','2018':'sum','2019':'sum'})
 	# fill na's with 0
 	violations_joined = violations_joined.na.fill(0)
-	violations_joined.show()
-	# rename pivoted columns for output
-	violations_joined = violations_joined.withColumnRenamed('2015', 'COUNT_2015')\
-		.withColumnRenamed('2016', 'COUNT_2016')\
-		.withColumnRenamed('2017', 'COUNT_2017')\
-		.withColumnRenamed('2018', 'COUNT_2018')\
-		.withColumnRenamed('2019', 'COUNT_2019')
-	# join remaining centerlines (without violations)
-	full_violations_joined = violations_joined.join(broadcast(centerlines), ['PHYSICALID'], how='right')
-	# drop unneeded cols
-	columns_to_keep = ['PHYSICALID','COUNT_2015','COUNT_2016','COUNT_2017','COUNT_2018','COUNT_2019']
-	full_violations_joined = full_violations_joined.select(*columns_to_keep)
-	# fill na's with 0
-	full_violations_joined = full_violations_joined.na.fill(0)
-	full_violations_joined.show()
 	# function to calculate OLS R-squared
 	def ols_coef(a,b,c,d,e):
 		x = ([2015,2016,2017,2018,2019])
@@ -100,14 +106,11 @@ def violations_per_streetline(output_folder):
 		results = model.fit()
 		return results.params[1]
 	# add col with OLS coeff for each street segment
-	full_violations_joined = full_violations_joined.withColumn('OLS_COEF', ols_coef(full_violations_joined['COUNT_2015'], full_violations_joined['COUNT_2016'], full_violations_joined['COUNT_2017'], full_violations_joined['COUNT_2018'], full_violations_joined['COUNT_2019']))
+	violations_joined = violations_joined.withColumn('OLS_COEF', ols_coef(violations_joined['sum(2015)'], violations_joined['sum(2016)'], violations_joined['sum(2017)'], violations_joined['sum(2018)'], violations_joined['sum(2019)']))
 	# order by PHYSICALID
-	full_violations_joined = full_violations_joined.orderBy('PHYSICALID')
-
-	# remove dups:
-	# full_violations_joined = full_violations_joined.distinct()
+	violations_joined = violations_joined.orderBy('PHYSICALID')
 	# write to csv
-	full_violations_joined.write.csv(output_folder)
+	violations_joined.write.csv(output_folder)
 
 if __name__ == '__main__':
 	output_folder = sys.argv[1]
