@@ -60,12 +60,12 @@ def violations_per_streetline(output_folder):
     # Select cols:  PHYSICALID, L_LOW_HN, L_HIGH_HN, R_LOW_HN, R_HIGH_HN, ST_LABEL, FULL_STREE, BOROCODE
 	centerlines_street = centerlines.select(centerlines['PHYSICALID'], \
                                  centerlines['L_LOW_HN'], centerlines['L_HIGH_HN'], centerlines['R_LOW_HN'],\
-                                 centerlines['R_HIGH_HN'], centerlines['BOROCODE'], lower(centerlines['ST_LABEL']).alias('ST_LABEL'))
+                                 centerlines['R_HIGH_HN'], centerlines['BOROCODE'], f.lower(centerlines['ST_LABEL']).alias('ST_LABEL'))
 
     # Select cols:  PHYSICALID, L_LOW_HN, L_HIGH_HN, R_LOW_HN, R_HIGH_HN, ST_LABEL, FULL_STREE, BOROCODE
 	centerlines_full = centerlines.select(centerlines['PHYSICALID'], \
                                  centerlines['L_LOW_HN'], centerlines['L_HIGH_HN'], centerlines['R_LOW_HN'],\
-                                 centerlines['R_HIGH_HN'], centerlines['BOROCODE'], lower(centerlines['FULL_STREE']).alias('FULL_STREE'))
+                                 centerlines['R_HIGH_HN'], centerlines['BOROCODE'], f.lower(centerlines['FULL_STREE']).alias('FULL_STREE'))
 
     # union centerlines, so all labels are in one col 
 	centerlines = centerlines_street.union(centerlines_full)
