@@ -57,6 +57,18 @@ def violations_per_streetline(output_folder):
 	centerlines = centerlines.withColumn('L_HIGH_HN', f.regexp_replace('L_HIGH_HN', '-', '').cast(IntegerType()))
 	centerlines = centerlines.withColumn('R_LOW_HN', f.regexp_replace('R_LOW_HN', '-', '').cast(IntegerType()))
 	centerlines = centerlines.withColumn('R_HIGH_HN', f.regexp_replace('R_HIGH_HN', '-', '').cast(IntegerType()))
+    # Select cols:  PHYSICALID, L_LOW_HN, L_HIGH_HN, R_LOW_HN, R_HIGH_HN, ST_LABEL, FULL_STREE, BOROCODE
+	centerlines_street = centerlines.select(centerlines['PHYSICALID'], \
+                                 centerlines['L_LOW_HN'], centerlines['L_HIGH_HN'], centerlines['R_LOW_HN'],\
+                                 centerlines['R_HIGH_HN'], centerlines['BOROCODE'], lower(centerlines['ST_LABEL']).alias('ST_LABEL'))
+
+    # Select cols:  PHYSICALID, L_LOW_HN, L_HIGH_HN, R_LOW_HN, R_HIGH_HN, ST_LABEL, FULL_STREE, BOROCODE
+	centerlines_full = centerlines.select(centerlines['PHYSICALID'], \
+                                 centerlines['L_LOW_HN'], centerlines['L_HIGH_HN'], centerlines['R_LOW_HN'],\
+                                 centerlines['R_HIGH_HN'], centerlines['BOROCODE'], lower(centerlines['FULL_STREE']).alias('FULL_STREE'))
+
+    # union centerlines, so all labels are in one col 
+	centerlines = centerlines_street.union(centerlines_full)
 
 	# uncache data
 	violations = violations.unpersist()
@@ -65,7 +77,7 @@ def violations_per_streetline(output_folder):
 	# join Violations and Centerline data frames on conditions
 	violations_joined = violations.join(f.broadcast(centerlines),
 		(violations['BOROCODE'] == centerlines['BOROCODE']) & 
-		((violations['Street Name'] == centerlines['ST_LABEL']) | (violations['Street Name'] == centerlines['FULL_STREE'])) &
+		(violations['Street Name'] == centerlines['ST_LABEL']) &
 		( ((violations['odd'] == 0) & 
 			(centerlines['R_LOW_HN'] <= violations['House Number']) & 
 			(violations['House Number'] <= centerlines['R_HIGH_HN']))
@@ -74,7 +86,7 @@ def violations_per_streetline(output_folder):
 			(centerlines['L_LOW_HN'] <= violations['House Number']) & 
 			(violations['House Number'] <= centerlines['L_HIGH_HN']))
 		) )
-	violations_joined.show()
+	# violations_joined.show()
 
 	# # group on PHYSICALID, pivot on Year
 	# violations_joined = violations_joined.groupBy("PHYSICALID").pivot("YEAR", ['2015','2016','2017','2018','2019']).count()
@@ -91,7 +103,6 @@ def violations_per_streetline(output_folder):
 	full_violations_joined = full_violations_joined.groupBy('PHYSICALID').agg({'2015':'sum','2016':'sum','2017':'sum','2018':'sum','2019':'sum'})
 	# fill na's with 0
 	full_violations_joined = full_violations_joined.na.fill(0)
-	full_violations_joined.show()
 	# function to calculate OLS R-squared
 	def ols_coef(a,b,c,d,e):
 		x = ([2015,2016,2017,2018,2019])
