@@ -44,7 +44,6 @@ def violations_per_streetline(output_folder):
     violations = violations.na.fill(0)
 	# add even/odd col
 	violations = violations.withColumn('odd', f.when(f.col('House Number')%2==0, 0).otherwise(1))
-	
 	# create a pyspark df from Street Centerlines
 	centerlines = spark.read.csv('hdfs:///tmp/bdm/nyc_cscl.csv', header=True, escape='"', inferSchema=True).cache()
 	# select cols
@@ -88,8 +87,8 @@ def violations_per_streetline(output_folder):
 	# drop unneeded cols
 	columns_to_keep = ['PHYSICALID','2015','2016','2017','2018','2019']
 	full_violations_joined = full_violations_joined.select(*columns_to_keep)
-    # group, sum on physical ID
-    full_violations_joined = full_violations_joined.groupBy('PHYSICALID').agg({'COUNT_2015':'sum',\
+    	# group, sum on physical ID
+    	full_violations_joined = full_violations_joined.groupBy('PHYSICALID').agg({'COUNT_2015':'sum',\
                                                                           'COUNT_2016':'sum',\
                                                                           'COUNT_2017':'sum',\
                                                                           'COUNT_2018':'sum',\
